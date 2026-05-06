@@ -107,13 +107,18 @@ async def edits(request: Request, api_key: str = Depends(get_api_key)):
             mime_type = getattr(image_file, "content_type", "image/png")
             urls.append(f"data:{mime_type};base64," + base64.b64encode(img_bytes).decode('utf-8'))
             
+    extra_params = {}
+    
+    masks = []
     for mask_file in form.getlist("mask"):
         if hasattr(mask_file, "read"):
             mask_bytes = await mask_file.read()
             mime_type = getattr(mask_file, "content_type", "image/png")
-            urls.append(f"data:{mime_type};base64," + base64.b64encode(mask_bytes).decode('utf-8'))
+            masks.append(f"data:{mime_type};base64," + base64.b64encode(mask_bytes).decode('utf-8'))
             
-    extra_params = {}
+    if masks:
+        extra_params["mask"] = masks[0] if len(masks) == 1 else masks
+            
     for k, v in form.items():
         if k not in ["model", "prompt", "size", "image", "mask"]:
             if isinstance(v, str):

@@ -42,9 +42,14 @@ class AdapterCore:
             
             # urls 格式自动转换 (数组还是单字符串)
             if "urls" in payload:
+                urls_field = model_params.get("urls_field", "urls")
                 urls_format = model_params.get("urls_format", "array")
-                if urls_format == "string" and isinstance(payload["urls"], list) and len(payload["urls"]) > 0:
-                    payload["urls"] = payload["urls"][0]
+                urls_val = payload.pop("urls")
+                
+                if urls_format == "string" and isinstance(urls_val, list) and len(urls_val) > 0:
+                    payload[urls_field] = urls_val[0]
+                else:
+                    payload[urls_field] = urls_val
             
             # 添加模型需要的其他固定参数
             for k, v in model_params.get("fixed_params", {}).items():
