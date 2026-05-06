@@ -27,6 +27,16 @@ class AdapterCore:
         if urls:
             payload["urls"] = urls
         if extra_params:
+            if driver:
+                m_params = driver.get("model_params", {}).get(self.model_name, {})
+                allowed_str = m_params.get("allowed_params", "")
+                if allowed_str:
+                    if allowed_str.strip().lower() == "none":
+                        extra_params = {}
+                    else:
+                        allowed_list = [x.strip() for x in allowed_str.split(",") if x.strip()]
+                        extra_params = {k: v for k, v in extra_params.items() if k in allowed_list}
+                        
             for k, v in extra_params.items():
                 if k not in payload:
                     payload[k] = v

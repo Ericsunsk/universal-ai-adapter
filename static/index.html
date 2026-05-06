@@ -219,6 +219,7 @@
                         size_field: params.size_field || "size",
                         urls_field: params.urls_field || "urls",
                         urls_format: params.urls_format || "array",
+                        allowed_params: params.allowed_params || "",
                         fixed_params: JSON.stringify(params.fixed_params || {}),
                         size_mapping: JSON.stringify(params.size_mapping || {})
                     };
@@ -262,6 +263,7 @@
                         size_field: cfg.size_field,
                         urls_field: cfg.urls_field,
                         urls_format: cfg.urls_format,
+                        allowed_params: cfg.allowed_params,
                         size_mapping: JSON.parse(cfg.size_mapping || "{}"),
                         fixed_params: JSON.parse(cfg.fixed_params || "{}")
                     };
@@ -312,6 +314,7 @@
                     size_field: "size",
                     urls_field: "urls",
                     urls_format: "array",
+                    allowed_params: "",
                     fixed_params: "{}",
                     size_mapping: "{}"
                 };
@@ -336,12 +339,18 @@
                             <input type="text" id="cfg-${model}-urlsfield" class="input-field text-xs font-mono" value="${cfg.urls_field}" placeholder="urls">
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-[10px] text-zinc-400 mb-1 uppercase">参考图类型 (URLs Format)</label>
-                        <select id="cfg-${model}-urlsformat" class="input-field text-xs text-zinc-300">
-                            <option value="array" ${cfg.urls_format==='array'?'selected':''}>数组 [Array]</option>
-                            <option value="string" ${cfg.urls_format==='string'?'selected':''}>单图字符串 (String)</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-[10px] text-zinc-400 mb-1 uppercase">参考图类型 (URLs Format)</label>
+                            <select id="cfg-${model}-urlsformat" class="input-field text-xs text-zinc-300">
+                                <option value="array" ${cfg.urls_format==='array'?'selected':''}>数组 [Array]</option>
+                                <option value="string" ${cfg.urls_format==='string'?'selected':''}>单图字符串 (String)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-zinc-400 mb-1 uppercase">允许透传的参数名单</label>
+                            <input type="text" id="cfg-${model}-allowed" class="input-field text-xs font-mono" value="${cfg.allowed_params}" placeholder="留空传全部，填 none 禁用透传">
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -368,6 +377,7 @@
                         size_field: document.getElementById(`cfg-${model}-sizefield`).value.trim(),
                         urls_field: document.getElementById(`cfg-${model}-urlsfield`).value.trim() || "urls",
                         urls_format: document.getElementById(`cfg-${model}-urlsformat`).value,
+                        allowed_params: document.getElementById(`cfg-${model}-allowed`).value.trim(),
                         fixed_params: document.getElementById(`cfg-${model}-fixed`).value.trim(),
                         size_mapping: document.getElementById(`cfg-${model}-sizemap`).value.trim()
                     };
