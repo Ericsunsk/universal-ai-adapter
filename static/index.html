@@ -345,8 +345,8 @@
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[10px] text-zinc-400 mb-1 uppercase">尺寸映射规则 (JSON)</label>
-                            <textarea id="cfg-${model}-sizemap" class="input-field text-[10px] h-16 font-mono">${cfg.size_mapping}</textarea>
+                            <label class="block text-[10px] text-zinc-400 mb-1 uppercase" title="填入 {'default': '_auto_ratio'} 可自动转换宽高比">尺寸映射规则 (JSON) <i class="fas fa-info-circle text-emerald-400 ml-1"></i></label>
+                            <textarea id="cfg-${model}-sizemap" class="input-field text-[10px] h-16 font-mono" placeholder='{"default": "_auto_ratio"}'>${cfg.size_mapping}</textarea>
                         </div>
                         <div>
                             <label class="block text-[10px] text-zinc-400 mb-1 uppercase">固定注入参数 (JSON)</label>

@@ -35,7 +35,28 @@ class AdapterCore:
         model_params = driver.get("model_params", {}).get(self.model_name)
         if model_params:
             size_map = model_params.get("size_mapping", {})
-            mapped_size = size_map.get(size, size_map.get("default", size))
+            mapped_size = size_map.get(size)
+            
+            if not mapped_size:
+                default_strategy = size_map.get("default", size)
+                if default_strategy == "_auto_ratio" and "x" in size:
+                    try:
+                        w_str, h_str = size.split("x", 1)
+                        w, h = int(w_str), int(h_str)
+                        if h != 0:
+                            ratio = w / h
+                            ratios = {
+                                1.0: "1:1", 16/9: "16:9", 9/16: "9:16", 
+                                4/3: "4:3", 3/4: "3:4", 3/2: "3:2", 2/3: "2:3", 
+                                21/9: "21:9", 9/21: "9:21", 5/4: "5:4", 4/5: "4:5"
+                            }
+                            closest = min(ratios.keys(), key=lambda k: abs(k - ratio))
+                            mapped_size = ratios[closest]
+                    except Exception:
+                        pass
+                
+                if not mapped_size:
+                    mapped_size = default_strategy if default_strategy != "_auto_ratio" else size
             
             size_field = model_params.get("size_field", "size")
             payload[size_field] = mapped_size
