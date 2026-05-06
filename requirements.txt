@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+httpx
+gunicorn
+filelock
+python-multipart

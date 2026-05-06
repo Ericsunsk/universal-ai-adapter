@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Adapter Pro - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #09090b; color: #fafafa; }
+        .glass { background: rgba(24, 24, 27, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-dark { background: rgba(12, 12, 14, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #8251EE 0%, #6322e0 100%); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(130, 81, 238, 0.3); }
+        .input-field { background: #121214; border: 1px solid #27272a; border-radius: 8px; padding: 10px 14px; width: 100%; color: #fff; transition: border-color 0.2s; }
+        .input-field:focus { border-color: #8251EE; outline: none; ring: 1px solid #8251EE; }
+        .modal-overlay { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); transition: opacity 0.3s; }
+        .card-anim { transition: all 0.3s ease; }
+        .card-anim:hover { border-color: rgba(130, 81, 238, 0.5); transform: translateY(-2px); }
+        
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="p-4 md:p-12 min-h-screen">
+    <div id="app" class="max-w-6xl mx-auto">
+        <!-- 登录视图 -->
+        <div id="login-view" class="flex flex-col items-center justify-center h-[70vh]">
+            <div class="glass p-10 rounded-3xl w-full max-w-md shadow-2xl animate-slide-up text-center border-t border-white/10">
+                <div class="w-16 h-16 bg-[#8251EE]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-key text-2xl text-[#8251EE]"></i>
+                </div>
+                <h1 class="text-2xl font-bold mb-2">安全登录</h1>
+                <p class="text-zinc-500 mb-8 text-sm">请输入管理员密码访问适配器后台</p>
+                <input type="password" id="admin-pass" class="input-field mb-4 text-center tracking-widest" placeholder="••••••••">
+                <button onclick="login()" class="w-full btn-primary p-3 rounded-xl font-semibold">进入管理后台</button>
+            </div>
+        </div>
+
+        <!-- 主面板 -->
+        <div id="main-view" class="hidden animate-slide-up">
+            <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                <div>
+                    <h1 class="text-4xl font-extrabold tracking-tight text-white mb-2">驱动管理控制台</h1>
+                    <div class="flex items-center gap-2 text-zinc-500 text-sm">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        系统状态：运行中
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="openModal()" class="btn-primary px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2">
+                        <i class="fas fa-plus"></i> 添加新驱动
+                    </button>
+                    <button onclick="saveAll()" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-all">
+                        <i class="fas fa-cloud-upload-alt text-emerald-400"></i> 保存并发布
+                    </button>
+                </div>
+            </header>
+
+            <div id="drivers-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 驱动卡片将在这里动态渲染 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 驱动配置模态框 -->
+    <div id="driver-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="modal-overlay absolute inset-0" onclick="closeModal()"></div>
+        <div class="glass-dark w-full max-w-2xl rounded-3xl shadow-2xl relative overflow-hidden animate-slide-up border border-white/5">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                <h2 id="modal-title" class="text-xl font-bold">配置驱动</h2>
+                <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="p-8 max-h-[75vh] overflow-y-auto space-y-6">
+                <!-- 基本信息 -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">驱动 ID (唯一标识)</label>
+                        <input type="text" id="f-id" class="input-field" placeholder="例如: suchuang_v2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">显示名称</label>
+                        <input type="text" id="f-name" class="input-field" placeholder="例如: 某某生图服务">
+                    </div>
+                </div>
+
+                <!-- 模型列表 -->
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">支持的模型名 (英文逗号分隔)</label>
+                    <textarea id="f-models" class="input-field h-16" placeholder="gpt-image-2, nanobanana2" oninput="renderModelForms()"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">结果查询 (Poll) URL</label>
+                    <input type="text" id="f-poll-url" class="input-field font-mono text-xs" placeholder="https://...">
+                </div>
+
+                <!-- 动态渲染的模型配置区域 -->
+                <div id="dynamic-models-container" class="space-y-4 mt-6 pt-4 border-t border-white/10">
+                    <!-- 表单在此动态生成 -->
+                </div>
+
+                <!-- 参数设置 -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">轮询间隔 (秒)</label>
+                        <input type="number" id="f-interval" class="input-field" value="3">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">最大超时 (秒)</label>
+                        <input type="number" id="f-timeout" class="input-field" value="120">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white/5 border-t border-white/5 flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-6 py-2 rounded-xl text-sm font-bold text-zinc-400 hover:text-white transition-colors">取消</button>
+                <button onclick="confirmDriver()" class="btn-primary px-8 py-2 rounded-xl text-sm font-bold">保存驱动配置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let config = { drivers: {} };
+        let password = "";
+        let currentEditId = null;
+        let currentModelConfigs = {};
+
+        async function login() {
+            password = document.getElementById('admin-pass').value;
+            try {
+                const res = await fetch(`/api/config`, {
+                    headers: { 'X-Admin-Password': password }
+                });
+                if (res.ok) {
+                    config = await res.json();
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('main-view').classList.remove('hidden');
+                    render();
+                } else {
+                    alert("密码错误，请检查！");
+                }
+            } catch (e) { alert("服务器连接失败"); }
+        }
+
+        function render() {
+            const list = document.getElementById('drivers-list');
+            list.innerHTML = '';
+            
+            Object.entries(config.drivers).forEach(([id, driver]) => {
+                const card = document.createElement('div');
+                card.className = 'glass p-8 rounded-3xl border border-white/5 relative card-anim flex flex-col h-full';
+                
+                let modelsHtml = (driver.models || []).map(m => `
+                    <span class="bg-zinc-800/50 text-zinc-400 px-3 py-1 rounded-lg text-[10px] font-bold border border-zinc-700/50 mr-2 mb-2 inline-block">
+                        ${m}
+                    </span>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 bg-[#8251EE]/10 rounded-xl flex items-center justify-center border border-[#8251EE]/20">
+                            <i class="fas fa-microchip text-[#8251EE]"></i>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="openModal('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors"><i class="fas fa-cog"></i></button>
+                            <button onclick="deleteDriver('${id}')" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-1">${driver.name || id}</h3>
+                    <p class="text-[10px] text-zinc-500 font-mono tracking-widest uppercase mb-6">${id}</p>
+                    
+                    <div class="space-y-4 flex-grow">
+                        <div>
+                            <div class="text-[10px] font-bold text-zinc-600 uppercase mb-2 tracking-wider">支持模型</div>
+                            <div class="flex flex-wrap">${modelsHtml}</div>
+                        </div>
+                        <div class="pt-4 border-t border-white/5">
+                            <div class="flex justify-between text-[11px] mb-2">
+                                <span class="text-zinc-600">轮询策略</span>
+                                <span class="text-zinc-400">${driver.polling_interval}s / ${driver.timeout}s</span>
+                            </div>
+                            <div class="text-[11px] truncate text-zinc-600">
+                                <i class="fas fa-link mr-1"></i> ${driver.poll_url}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // 模态框逻辑
+        function openModal(id = null) {
+            currentEditId = id;
+            const modal = document.getElementById('driver-modal');
+            const title = document.getElementById('modal-title');
+            
+            // 重置表单
+            if (id) {
+                title.innerText = "编辑驱动配置";
+                const d = config.drivers[id];
+                document.getElementById('f-id').value = id;
+                document.getElementById('f-id').disabled = true; // 编辑时不可改 ID
+                document.getElementById('f-name').value = d.name || "";
+                document.getElementById('f-models').value = (d.models || []).join(', ');
+                document.getElementById('f-poll-url').value = d.poll_url || "";
+                document.getElementById('f-interval').value = d.polling_interval || 3;
+                document.getElementById('f-timeout').value = d.timeout || 120;
+                
+                currentModelConfigs = {};
+                (d.models || []).forEach(m => {
+                    const submit_url = (d.submit_urls || {})[m] || "";
+                    const params = (d.model_params || {})[m] || {};
+                    currentModelConfigs[m] = {
+                        submit_url: submit_url,
+                        size_field: params.size_field || "size",
+                        urls_format: params.urls_format || "array",
+                        fixed_params: JSON.stringify(params.fixed_params || {}),
+                        size_mapping: JSON.stringify(params.size_mapping || {})
+                    };
+                });
+                renderModelForms();
+            } else {
+                title.innerText = "添加新驱动";
+                document.getElementById('f-id').value = "";
+                document.getElementById('f-id').disabled = false;
+                document.getElementById('f-name').value = "";
+                document.getElementById('f-models').value = "";
+                document.getElementById('f-poll-url').value = "";
+                currentModelConfigs = {};
+                renderModelForms();
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('driver-modal').classList.add('hidden');
+        }
+
+        function confirmDriver() {
+            const id = document.getElementById('f-id').value.trim();
+            if (!id) return alert("请输入驱动 ID");
+
+            saveCurrentModelForms();
+
+            const models = document.getElementById('f-models').value.split(',').map(m => m.trim()).filter(m => m);
+            let submit_urls = {};
+            let model_params = {};
+
+            try {
+                models.forEach(m => {
+                    const cfg = currentModelConfigs[m];
+                    if (!cfg) return;
+                    if (cfg.submit_url) submit_urls[m] = cfg.submit_url;
+                    
+                    model_params[m] = {
+                        size_field: cfg.size_field,
+                        urls_format: cfg.urls_format,
+                        size_mapping: JSON.parse(cfg.size_mapping || "{}"),
+                        fixed_params: JSON.parse(cfg.fixed_params || "{}")
+                    };
+                });
+            } catch(e) {
+                return alert("某个模型的 JSON 配置格式错误，请检查 尺寸映射 或 固定参数");
+            }
+
+            const existingDriver = currentEditId ? config.drivers[currentEditId] : {};
+            const driverData = {
+                ...existingDriver,
+                name: document.getElementById('f-name').value.trim(),
+                models: models,
+                submit_urls: submit_urls,
+                poll_url: document.getElementById('f-poll-url').value.trim(),
+                model_params: model_params,
+                polling_interval: parseInt(document.getElementById('f-interval').value),
+                timeout: parseInt(document.getElementById('f-timeout').value)
+            };
+
+            config.drivers[id] = driverData;
+            render();
+            closeModal();
+        }
+
+        function deleteDriver(id) {
+            if (confirm(`确定要彻底移除驱动 [${id}] 吗？`)) {
+                delete config.drivers[id];
+                render();
+            }
+        }
+
+        function renderModelForms() {
+            saveCurrentModelForms();
+            
+            const modelsText = document.getElementById('f-models').value;
+            const models = modelsText.split(',').map(m => m.trim()).filter(m => m);
+            const container = document.getElementById('dynamic-models-container');
+            container.innerHTML = '';
+            
+            if (models.length > 0) {
+                container.innerHTML = '<h3 class="text-sm font-bold text-emerald-400 mb-2">独立模型配置 (自动生成)</h3>';
+            }
+
+            models.forEach(model => {
+                const cfg = currentModelConfigs[model] || {
+                    submit_url: "",
+                    size_field: "size",
+                    urls_format: "array",
+                    fixed_params: "{}",
+                    size_mapping: "{}"
+                };
+
+                const div = document.createElement('div');
+                div.className = "bg-black/30 p-4 rounded-xl border border-white/5 space-y-3 mb-4";
+                div.innerHTML = `
+                    <div class="font-bold text-white mb-2 flex items-center gap-2">
+                        <i class="fas fa-cube text-[#8251EE]"></i> ${model}
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-zinc-400 mb-1 uppercase">提交接口 URL (Submit URL)</label>
+                        <input type="text" id="cfg-${model}-submit" class="input-field text-xs font-mono" value="${cfg.submit_url}" placeholder="https://...">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-zinc-400 mb-1 uppercase">尺寸字段名 (Size Field)</label>
+                            <input type="text" id="cfg-${model}-sizefield" class="input-field text-xs font-mono" value="${cfg.size_field}" placeholder="size">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-zinc-400 mb-1 uppercase">参考图类型 (URLs Format)</label>
+                            <select id="cfg-${model}-urlsformat" class="input-field text-xs text-zinc-300">
+                                <option value="array" ${cfg.urls_format==='array'?'selected':''}>数组 [Array]</option>
+                                <option value="string" ${cfg.urls_format==='string'?'selected':''}>单图字符串 (String)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-zinc-400 mb-1 uppercase">尺寸映射规则 (JSON)</label>
+                            <textarea id="cfg-${model}-sizemap" class="input-field text-[10px] h-16 font-mono">${cfg.size_mapping}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-zinc-400 mb-1 uppercase">固定注入参数 (JSON)</label>
+                            <textarea id="cfg-${model}-fixed" class="input-field text-[10px] h-16 font-mono">${cfg.fixed_params}</textarea>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function saveCurrentModelForms() {
+            const modelsText = document.getElementById('f-models').value;
+            const models = modelsText.split(',').map(m => m.trim()).filter(m => m);
+            models.forEach(model => {
+                if (document.getElementById(`cfg-${model}-submit`)) {
+                    currentModelConfigs[model] = {
+                        submit_url: document.getElementById(`cfg-${model}-submit`).value.trim(),
+                        size_field: document.getElementById(`cfg-${model}-sizefield`).value.trim(),
+                        urls_format: document.getElementById(`cfg-${model}-urlsformat`).value,
+                        fixed_params: document.getElementById(`cfg-${model}-fixed`).value.trim(),
+                        size_mapping: document.getElementById(`cfg-${model}-sizemap`).value.trim()
+                    };
+                }
+            });
+        }
+
+        async function saveAll() {
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Password': password
+                    },
+                    body: JSON.stringify({ config })
+                });
+                if (res.ok) alert("✅ 全局配置已成功发布！");
+                else alert("❌ 保存失败，请检查密码权限");
+            } catch (e) { alert("网络异常: " + e.message); }
+        }
+    </script>
+</body>
+</html>

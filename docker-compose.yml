@@ -1,0 +1,19 @@
+name: ai-universal-adapter
+
+services:
+  api-adapter:
+    build: .
+    container_name: suchuang-adapter
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - TZ=Asia/Shanghai
+      - ADMIN_PASSWORD=change_me_in_prod
+    volumes:
+      - ./data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10mb"
+        max-file: "3"
